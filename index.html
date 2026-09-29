@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>소셜스킬 놀이터</title>
+<style>
+  :root{
+    --bg:#FFF9F0;
+    --ink:#3A2E2A;
+    --sub:#8A7A72;
+    --card-bg:#FFFFFF;
+    --shadow: 0 6px 16px rgba(58,46,42,0.10);
+    --radius: 22px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",-apple-system,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:1080px;
+    margin:0 auto;
+    padding:40px 24px 80px;
+  }
+  header{
+    text-align:center;
+    margin-bottom:40px;
+  }
+  header h1{
+    font-size:2.7rem;
+    margin:0 0 10px;
+  }
+  header p{
+    font-size:1.2rem;
+    color:var(--sub);
+    margin:0;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:24px;
+  }
+  @media (max-width:900px){
+    .grid{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:600px){
+    .grid{grid-template-columns:1fr;}
+    header h1{font-size:2.1rem;}
+    .modal{padding:26px 22px 28px;}
+    .situation-box{font-size:1.15rem;padding:20px;}
+    .option-btn{font-size:1.05rem;padding:14px 10px;}
+    .check-item{font-size:1.05rem;padding:14px 16px;}
+    .sentence-result{font-size:1.2rem;padding:20px;}
+  }
+  .card{
+    background:var(--card-bg);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:26px 22px;
+    cursor:pointer;
+    border:3px solid transparent;
+    transition:transform .15s ease, border-color .15s ease;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    text-align:center;
+  }
+  .card:hover{
+    transform:translateY(-4px);
+  }
+  .card:active{transform:translateY(-1px) scale(.99);}
+  .card .icon{
+    font-size:2.6rem;
+    width:72px;height:72px;
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto;
+    border-radius:50%;
+  }
+  .card h2{
+    font-size:1.45rem;
+    margin:4px 0 0;
+  }
+  .card .desc{
+    font-size:1.05rem;
+    color:var(--sub);
+    line-height:1.45;
+    min-height:2.9em;
+  }
+  .stars{
+    font-size:1.35rem;
+    letter-spacing:2px;
+  }
+  .stars .on{color:#FFB800;}
+  .stars .off{color:#E5DDD3;}
+  .start-hint{
+    margin-top:auto;
+    font-size:1rem;
+    font-weight:700;
+    padding:8px 0 2px;
+  }
+
+  /* Modal */
+  .overlay{
+    position:fixed;inset:0;
+    background:rgba(58,46,42,.55);
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;
+    z-index:100;
+    opacity:0;pointer-events:none;
+    transition:opacity .2s ease;
+  }
+  .overlay.open{opacity:1;pointer-events:auto;}
+  .modal{
+    background:var(--card-bg);
+    border-radius:26px;
+    width:100%;max-width:720px;
+    max-height:92vh;
+    overflow-y:auto;
+    padding:38px 40px 40px;
+    position:relative;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);
+  }
+  .modal-close{
+    position:absolute;
+    top:20px;right:22px;
+    background:none;border:none;
+    font-size:1.7rem;
+    cursor:pointer;
+    color:var(--sub);
+    line-height:1;
+  }
+  .modal-head{
+    display:flex;align-items:center;gap:12px;
+    margin-bottom:8px;
+  }
+  .modal-head .icon{
+    font-size:2.1rem;
+  }
+  .modal-head h2{
+    margin:0;font-size:1.6rem;
+  }
+  .progress{
+    display:flex;gap:6px;margin:20px 0 26px;
+  }
+  .progress span{
+    flex:1;height:8px;border-radius:5px;
+    background:#EEE6DC;
+  }
+  .progress span.done{background:var(--accent,#8B5CF6);}
+  .step-label{
+    font-size:1rem;
+    font-weight:700;
+    color:var(--accent,#8B5CF6);
+    margin-bottom:8px;
+  }
+  .situation-box{
+    background:var(--accent-light,#F3E8FF);
+    border-radius:16px;
+    padding:26px;
+    font-size:1.35rem;
+    line-height:1.6;
+    margin-bottom:6px;
+  }
+  .option-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+    margin-top:16px;
+  }
+  .option-btn{
+    border:2px solid #EEE6DC;
+    background:#FFF;
+    border-radius:14px;
+    padding:18px 14px;
+    font-size:1.2rem;
+    cursor:pointer;
+    text-align:center;
+    transition:.15s;
+  }
+  .option-btn:hover{border-color:var(--accent,#8B5CF6);}
+  .option-btn.selected{
+    border-color:var(--accent,#8B5CF6);
+    background:var(--accent-light,#F3E8FF);
+    font-weight:700;
+  }
+  .check-list{
+    display:flex;flex-direction:column;gap:12px;
+    margin-top:16px;
+  }
+  .check-item{
+    display:flex;align-items:center;gap:14px;
+    border:2px solid #EEE6DC;
+    border-radius:14px;
+    padding:18px 20px;
+    cursor:pointer;
+    font-size:1.2rem;
+    transition:.15s;
+  }
+  .check-item.checked{
+    border-color:var(--accent,#8B5CF6);
+    background:var(--accent-light,#F3E8FF);
+  }
+  .check-box{
+    width:26px;height:26px;border-radius:8px;
+    border:2px solid #D8CCC0;
+    flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1rem;
+    background:#fff;
+  }
+  .check-item.checked .check-box{
+    background:var(--accent,#8B5CF6);
+    border-color:var(--accent,#8B5CF6);
+    color:#fff;
+  }
+  .sentence-result{
+    background:var(--accent-light,#F3E8FF);
+    border-radius:16px;
+    padding:26px;
+    font-size:1.45rem;
+    font-weight:700;
+    text-align:center;
+    margin-top:18px;
+    line-height:1.55;
+  }
+  .nav-row{
+    display:flex;gap:12px;margin-top:30px;
+  }
+  .btn{
+    flex:1;
+    border:none;
+    border-radius:14px;
+    padding:16px 10px;
+    font-size:1.2rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:.15s;
+  }
+  .btn-primary{
+    background:var(--accent,#8B5CF6);
+    color:#fff;
+  }
+  .btn-primary:disabled{
+    background:#E5DDD3;
+    cursor:not-allowed;
+  }
+  .btn-ghost{
+    background:#F3EFE9;
+    color:var(--ink);
+    flex:none;
+    width:120px;
+  }
+  .complete-wrap{
+    text-align:center;
+    padding:10px 0 0;
+  }
+  .complete-wrap .big-emoji{
+    font-size:3.6rem;
+    margin-bottom:12px;
+  }
+  .complete-wrap h3{
+    margin:0 0 10px;
+    font-size:1.6rem;
+  }
+  .complete-wrap p{
+    color:var(--sub);
+    font-size:1.15rem;
+    margin:0 0 20px;
+  }
+  .rate-stars{
+    display:flex;
+    flex-direction:row-reverse;
+    justify-content:center;
+    gap:8px;
+    font-size:2.6rem;
+    cursor:pointer;
+    margin-bottom:26px;
+  }
+  .rate-stars span{
+    color:#E5DDD3;
+    transition:color .1s, transform .1s;
+  }
+  .rate-stars span.on{color:#FFB800;}
+  .rate-stars span:hover,
+  .rate-stars span:hover ~ span{
+    color:#FFB800;
+    transform:scale(1.12);
+  }
+
+  .student-badge{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    margin-top:14px;
+    font-size:1rem;
+    color:var(--sub);
+  }
+  .student-badge b{color:var(--ink);}
+  .student-badge button{
+    border:none;background:none;color:var(--sub);
+    cursor:pointer;font-size:.95rem;text-decoration:underline;
+  }
+  .name-gate input{
+    width:100%;
+    font-size:1.2rem;
+    padding:16px 18px;
+    border-radius:14px;
+    border:2px solid #EEE6DC;
+    margin:18px 0 22px;
+  }
+  .name-gate input:focus{outline:none;border-color:#8B5CF6;}
+  footer{
+    text-align:center;
+    margin-top:48px;
+  }
+  footer a{color:var(--sub);font-size:.9rem;text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎨 소셜스킬 놀이터</h1>
+    <p>여섯 가지 놀이를 통해 마음을 배워요</p>
+    <div class="student-badge" id="studentBadge"></div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <footer><a href="dashboard.html">📊 선생님 대시보드</a></footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const ACTIVITIES = [
+  {
+    id:'empathy', icon:'🤝', title:'공감의 힘', desc:'친구의 마음을 함께 느껴봐요',
+    color:'#8B5CF6', colorLight:'#F3E8FF',
+    steps:['상황 살펴보기','마음 짐작하기','공감 표정 짓기','공감 문장 만들기'],
+    scenarios:[
+      { situation:'짝꿍이 아끼던 필통을 잃어버려서 울상이에요.',
+        emotions:['속상함 😢','당황스러움 😳','미안함 😔','걱정됨 😟'],
+        gestures:['친구의 눈을 바라봐요','몸을 살짝 기울여요','고개를 끄덕여요','손을 다정하게 잡아줘요'],
+        sentences:['많이 속상했겠다','내가 같이 찾아줄게','그럴 수 있어, 괜찮아'] },
+      { situation:'친구가 달리기 시합에서 꼴찌를 해서 속상해해요.',
+        emotions:['속상함 😢','부끄러움 😳','실망함 😞'],
+        gestures:['친구 옆에 앉아요','눈을 마주쳐요','어깨를 토닥여요'],
+        sentences:['속상했겠다, 그래도 최선을 다했잖아','다음엔 더 잘할 수 있을 거야','내가 응원할게'] }
+    ]
+  },
+  {
+    id:'listening', icon:'👂', title:'경청의 자세', desc:'친구의 이야기에 귀 기울여요',
+    color:'#3B82F6', colorLight:'#E5F0FF',
+    steps:['이야기 들어보기','마음 확인하기','경청 자세 잡기','맞장구 문장 만들기'],
+    scenarios:[
+      { situation:'친구가 어제 있었던 속상한 일을 이야기하고 싶어해요.',
+        emotions:['속상함 😢','답답함 😤','서운함 😞'],
+        gestures:['눈을 마주쳐요','몸을 친구 쪽으로 기울여요','고개를 끄덕여요','하던 일을 멈춰요'],
+        sentences:['그래서 어떻게 됐어?','더 말해줄래?','그랬구나, 힘들었겠다'] },
+      { situation:'짝이 새로 배운 게임 규칙을 신나게 설명해주고 있어요.',
+        emotions:['신남 😆','설렘 🤩','자랑스러움 😊'],
+        gestures:['눈을 마주쳐요','중간에 끼어들지 않아요','고개를 끄덕여요'],
+        sentences:['우와 신기하다, 더 알려줘','그래서 다음엔 어떻게 해?','재밌겠다!'] }
+    ]
+  },
+  {
+    id:'apology', icon:'🙏', title:'사과의 기술', desc:'내 잘못을 진심으로 사과해요',
+    color:'#F97316', colorLight:'#FFEEDC',
+    steps:['잘못 짚어보기','마음 표현하기','진심 어린 자세','사과 문장 만들기'],
+    scenarios:[
+      { situation:'친구의 블록 작품을 실수로 무너뜨렸어요.',
+        emotions:['미안함 😔','당황스러움 😳','속상함 😢'],
+        gestures:['친구 눈을 바라봐요','허리를 숙여 인사해요','두 손을 모아요'],
+        sentences:['미안해, 내가 다시 만드는 거 도와줄게','일부러 그런 게 아니야, 미안해','다음엔 조심할게'] },
+      { situation:'복도에서 급하게 뛰다가 친구와 부딪혔어요.',
+        emotions:['당황스러움 😳','미안함 😔'],
+        gestures:['멈춰서 돌아봐요','눈을 마주쳐요','손을 내밀어요'],
+        sentences:['미안해, 괜찮아?','내가 급해서 그랬어, 미안해'] }
+    ]
+  },
+  {
+    id:'reconcile', icon:'🌈', title:'화해의 손길', desc:'다시 마음을 여는 법을 배워요',
+    color:'#22C55E', colorLight:'#E6F9EC',
+    steps:['상황 되짚기','마음 나누기','화해의 몸짓','화해 문장 만들기'],
+    scenarios:[
+      { situation:'어제 사소한 다툼으로 짝과 계속 말을 안 하고 있어요.',
+        emotions:['어색함 😅','서운함 😞','그리움 🥹'],
+        gestures:['먼저 다가가요','손을 내밀어요','웃으며 인사해요'],
+        sentences:['어제는 나도 미안했어','우리 다시 친하게 지내자','화해하자, 악수할래?'] },
+      { situation:'게임에서 진 것 때문에 친구랑 삐졌어요.',
+        emotions:['속상함 😢','민망함 😳'],
+        gestures:['눈을 마주쳐요','손을 내밀어요','미소를 지어요'],
+        sentences:['아까는 나도 흥분했어, 미안해','우리 다시 같이 놀자','화해의 하이파이브 할까?'] }
+    ]
+  },
+  {
+    id:'compliment', icon:'🌟', title:'칭찬의 마법', desc:'친구의 좋은 점을 찾아 전해요',
+    color:'#EC4899', colorLight:'#FCE4F1',
+    steps:['좋은 점 찾기','마음 표현하기','칭찬 표정 짓기','칭찬 문장 만들기'],
+    scenarios:[
+      { situation:'짝이 어려운 수학 문제를 혼자 힘으로 풀어냈어요.',
+        emotions:['뿌듯함 😊','신기함 😲','기특함 🥰'],
+        gestures:['눈을 마주쳐요','엄지를 척 들어요','밝게 웃어요'],
+        sentences:['우와 대단하다!','너 진짜 똑똑하구나','나도 너처럼 잘하고 싶어'] },
+      { situation:'친구가 그림을 정성스럽게 그렸어요.',
+        emotions:['놀라움 😲','흐뭇함 🥰'],
+        gestures:['그림을 자세히 봐요','박수를 쳐줘요','엄지를 들어요'],
+        sentences:['색깔이 진짜 예쁘다!','너 그림 진짜 잘 그린다','다음에 그리는 법 알려줘'] }
+    ]
+  },
+  {
+    id:'boundary', icon:'🛡️', title:'내 마음 지키기', desc:'예의 바르게 거절하는 용기',
+    color:'#14B8A6', colorLight:'#DFF7F3',
+    steps:['상황 알아차리기','내 마음 표현하기','단호한 자세 짓기','거절 문장 만들기'],
+    scenarios:[
+      { situation:'친구가 자꾸 내 색연필을 허락 없이 가져가요.',
+        emotions:['불편함 😣','당황스러움 😳','속상함 😢'],
+        gestures:['눈을 마주쳐요','허리를 펴요','또렷한 목소리를 내요'],
+        sentences:['미안하지만 지금은 안 돼','다음엔 먼저 물어봐줘','내 물건은 내가 챙길게'] },
+      { situation:'짝이 순서를 안 지키고 계속 새치기해요.',
+        emotions:['불편함 😣','답답함 😤'],
+        gestures:['눈을 마주쳐요','허리를 펴요','손바닥을 살짝 들어요'],
+        sentences:['미안하지만 순서는 지켜야 해','다음엔 내 차례를 기다려줘','같이 규칙을 지키자'] }
+    ]
+  }
+];
+
+const API_URL = (window.SSP_CONFIG && window.SSP_CONFIG.API_URL) || '';
+const RATE_KEY = 'ssp_ratings';
+const NAME_KEY = 'ssp_name';
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function loadRatings(){
+  try{ return JSON.parse(localStorage.getItem(RATE_KEY)) || {}; }catch(e){ return {}; }
+}
+function saveRating(id, stars){
+  const r = loadRatings();
+  if(!r[id] || stars > r[id]) r[id] = stars;
+  try{ localStorage.setItem(RATE_KEY, JSON.stringify(r)); }catch(e){}
+}
+function getName(){
+  try{ return localStorage.getItem(NAME_KEY) || ''; }catch(e){ return ''; }
+}
+function setName(name){
+  try{ localStorage.setItem(NAME_KEY, name); }catch(e){}
+}
+function submitResult(activityId, activityTitle, stars){
+  const name = getName();
+  if(!name || !API_URL) return;
+  // text/plain으로 보내야 Apps Script에서 CORS 사전요청 없이 받을 수 있어요
+  fetch(API_URL, {
+    method:'POST',
+    headers:{'content-type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({ action:'add', name, activityId, activityTitle, stars })
+  }).catch(()=>{});
+}
+
+let state = null;
+
+function renderStudentBadge(){
+  const badge = document.getElementById('studentBadge');
+  const name = getName();
+  badge.innerHTML = name
+    ? `👤 <b>${esc(name)}</b> 학생 <button onclick="openNameGate()">이름 바꾸기</button>`
+    : '';
+}
+
+function openNameGate(){
+  const hasName = !!getName();
+  document.getElementById('overlay').classList.add('open');
+  const modal = document.getElementById('modal');
+  modal.innerHTML = `
+    ${hasName ? `<button class="modal-close" onclick="closeModal()">✕</button>` : ''}
+    <div class="name-gate">
+      <div class="modal-head">
+        <div class="icon">👋</div>
+        <h2>이름을 알려주세요</h2>
+      </div>
+      <div class="step-label" style="color:#8B5CF6">선생님이 우리 반 활동 결과를 확인할 수 있어요</div>
+      <input id="nameInput" type="text" placeholder="예) 김민준" maxlength="10" value="${esc(getName())}" />
+      <div class="nav-row">
+        <button class="btn btn-primary" onclick="confirmName()">시작하기</button>
+      </div>
+    </div>
+  `;
+  const input = document.getElementById('nameInput');
+  input.focus();
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') confirmName(); });
+}
+
+function confirmName(){
+  const val = document.getElementById('nameInput').value.trim().slice(0,10);
+  if(!val) return;
+  setName(val);
+  renderStudentBadge();
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function starHTML(count){
+  let s='';
+  for(let i=1;i<=5;i++) s += `<span class="${i<=count?'on':'off'}">★</span>`;
+  return s;
+}
+
+function renderGrid(){
+  const ratings = loadRatings();
+  const grid = document.getElementById('grid');
+  grid.innerHTML = ACTIVITIES.map(a => `
+    <div class="card" style="border-color:${ratings[a.id]?a.color:'transparent'}" onclick="openActivity('${a.id}')">
+      <div class="icon" style="background:${a.colorLight}">${a.icon}</div>
+      <h2>${a.title}</h2>
+      <div class="desc">${a.desc}</div>
+      <div class="stars">${starHTML(ratings[a.id]||0)}</div>
+      <div class="start-hint" style="color:${a.color}">시작하기 ▶</div>
+    </div>
+  `).join('');
+}
+
+function openActivity(id){
+  const activity = ACTIVITIES.find(a=>a.id===id);
+  const scenario = activity.scenarios[Math.floor(Math.random()*activity.scenarios.length)];
+  state = { activity, scenario, step:0, emotion:null, checked:new Set(), sentence:null };
+  document.getElementById('overlay').classList.add('open');
+  renderModal();
+}
+
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+  renderGrid();
+}
+
+function setVars(a){
+  const modal = document.getElementById('modal');
+  modal.style.setProperty('--accent', a.color);
+  modal.style.setProperty('--accent-light', a.colorLight);
+}
+
+function renderModal(){
+  const { activity, scenario, step } = state;
+  setVars(activity);
+  const modal = document.getElementById('modal');
+
+  if(step >= 4){
+    modal.innerHTML = `
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="complete-wrap">
+        <div class="big-emoji">🎉</div>
+        <h3>${activity.title} 완성!</h3>
+        <p>오늘도 마음을 잘 전했어요. 별점을 매겨볼까요?</p>
+        <div class="rate-stars" id="rateStars">
+          <span data-v="5" onclick="setStars(5)">★</span>
+          <span data-v="4" onclick="setStars(4)">★</span>
+          <span data-v="3" onclick="setStars(3)">★</span>
+          <span data-v="2" onclick="setStars(2)">★</span>
+          <span data-v="1" onclick="setStars(1)">★</span>
+        </div>
+        <div class="nav-row">
+          <button class="btn btn-primary" onclick="finishActivity()">완료하고 돌아가기</button>
+        </div>
+      </div>
+    `;
+    pendingStars = 0;
+    return;
+  }
+
+  const progress = activity.steps.map((_,i)=>`<span class="${i<=step?'done':''}"></span>`).join('');
+  const stepLabel = activity.steps[step];
+
+  let body = '';
+  if(step===0){
+    body = `<div class="situation-box">${scenario.situation}</div>`;
+  } else if(step===1){
+    body = `<div class="situation-box">${scenario.situation}</div>
+      <div class="option-grid">
+        ${scenario.emotions.map((e,i)=>`<button class="option-btn ${state.emotion===e?'selected':''}" onclick="pickEmotion(${i})">${e}</button>`).join('')}
+      </div>`;
+  } else if(step===2){
+    body = `<div class="check-list">
+      ${scenario.gestures.map((g,i)=>`<div class="check-item ${state.checked.has(i)?'checked':''}" onclick="toggleGesture(${i})">
+        <div class="check-box">${state.checked.has(i)?'✓':''}</div>
+        <div>${g}</div>
+      </div>`).join('')}
+    </div>`;
+  } else if(step===3){
+    body = `<div class="option-grid" style="grid-template-columns:1fr;">
+      ${scenario.sentences.map((s,i)=>`<button class="option-btn ${state.sentence===s?'selected':''}" onclick="pickSentence(${i})">${s}</button>`).join('')}
+      </div>
+      ${state.sentence ? `<div class="sentence-result">"${state.sentence}"</div>` : ''}
+    `;
+  }
+
+  const nextEnabled =
+    (step===0) ||
+    (step===1 && state.emotion) ||
+    (step===2 && state.checked.size===scenario.gestures.length) ||
+    (step===3 && state.sentence);
+
+  modal.innerHTML = `
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-head">
+      <div class="icon">${activity.icon}</div>
+      <h2>${activity.title}</h2>
+    </div>
+    <div class="progress">${progress}</div>
+    <div class="step-label">${step+1}단계 · ${stepLabel}</div>
+    ${body}
+    <div class="nav-row">
+      ${step>0 ? `<button class="btn btn-ghost" onclick="prevStep()">이전</button>` : ''}
+      <button class="btn btn-primary" ${nextEnabled?'':'disabled'} onclick="nextStep()">${step===3?'완료하기':'다음'}</button>
+    </div>
+  `;
+}
+
+function pickEmotion(i){ state.emotion = state.scenario.emotions[i]; renderModal(); }
+function toggleGesture(i){
+  if(state.checked.has(i)) state.checked.delete(i); else state.checked.add(i);
+  renderModal();
+}
+function pickSentence(i){ state.sentence = state.scenario.sentences[i]; renderModal(); }
+function prevStep(){ state.step--; renderModal(); }
+function nextStep(){ state.step++; renderModal(); }
+
+let pendingStars = 0;
+function setStars(n){
+  pendingStars = n;
+  document.getElementById('rateStars').querySelectorAll('span').forEach(s=>{
+    s.classList.toggle('on', Number(s.dataset.v) <= n);
+  });
+}
+function finishActivity(){
+  if(pendingStars>0){
+    saveRating(state.activity.id, pendingStars);
+    submitResult(state.activity.id, state.activity.title, pendingStars);
+  }
+  closeModal();
+}
+
+renderGrid();
+renderStudentBadge();
+if(!getName()) openNameGate();
+</script>
+</body>
+</html>

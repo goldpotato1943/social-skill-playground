@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>선생님 대시보드 · 소셜스킬 놀이터</title>
+<style>
+  :root{
+    --bg:#FFF9F0;
+    --ink:#3A2E2A;
+    --sub:#8A7A72;
+    --card-bg:#FFFFFF;
+    --shadow: 0 6px 16px rgba(58,46,42,0.10);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",-apple-system,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:1100px;
+    margin:0 auto;
+    padding:36px 24px 80px;
+  }
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:14px;
+    margin-bottom:24px;
+  }
+  h1{font-size:1.7rem;margin:0;}
+  .top-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .status{font-size:.9rem;color:var(--sub);}
+  .btn-reset{
+    border:none;border-radius:12px;
+    background:#FBEAE5;color:#C0392B;
+    padding:10px 16px;font-weight:700;font-size:.9rem;
+    cursor:pointer;
+  }
+  .btn-reset:hover{background:#F6D5CC;}
+  .summary{
+    display:flex;gap:16px;margin-bottom:26px;flex-wrap:wrap;
+  }
+  .summary .tile{
+    background:var(--card-bg);border-radius:16px;box-shadow:var(--shadow);
+    padding:16px 22px;min-width:140px;
+  }
+  .summary .tile .num{font-size:1.7rem;font-weight:800;}
+  .summary .tile .label{font-size:.85rem;color:var(--sub);}
+  .table-wrap{
+    background:var(--card-bg);
+    border-radius:20px;
+    box-shadow:var(--shadow);
+    overflow-x:auto;
+  }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    min-width:720px;
+  }
+  th,td{
+    padding:14px 12px;
+    text-align:center;
+    border-bottom:1px solid #F1E9DF;
+    font-size:.95rem;
+    white-space:nowrap;
+  }
+  th{
+    background:#FBF5EA;
+    font-size:.85rem;
+    color:var(--sub);
+  }
+  td.name-col, th.name-col{
+    text-align:left;
+    font-weight:700;
+    position:sticky;left:0;
+    background:inherit;
+  }
+  tbody tr:hover{background:#FFFBF3;}
+  .cell-star{font-weight:700;}
+  .cell-empty{color:#D8CCC0;}
+  .empty-state{
+    padding:60px 20px;text-align:center;color:var(--sub);font-size:1.05rem;line-height:1.6;
+  }
+  a.back{color:var(--sub);font-size:.9rem;text-decoration:none;}
+  a.back:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <a class="back" href="index.html">← 놀이터로 돌아가기</a>
+      <h1>📊 선생님 대시보드</h1>
+    </div>
+    <div class="top-actions">
+      <span class="status" id="status">불러오는 중...</span>
+      <button class="btn-reset" onclick="resetAll()">전체 초기화</button>
+    </div>
+  </header>
+
+  <div class="summary" id="summary"></div>
+  <div class="table-wrap" id="tableWrap"></div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const API_URL = (window.SSP_CONFIG && window.SSP_CONFIG.API_URL) || '';
+const ACTIVITIES = [
+  { id:'empathy', icon:'🤝', title:'공감의 힘', color:'#8B5CF6' },
+  { id:'listening', icon:'👂', title:'경청의 자세', color:'#3B82F6' },
+  { id:'apology', icon:'🙏', title:'사과의 기술', color:'#F97316' },
+  { id:'reconcile', icon:'🌈', title:'화해의 손길', color:'#22C55E' },
+  { id:'compliment', icon:'🌟', title:'칭찬의 마법', color:'#EC4899' },
+  { id:'boundary', icon:'🛡️', title:'내 마음 지키기', color:'#14B8A6' },
+];
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadResults(){
+  const status = document.getElementById('status');
+  if(!API_URL){
+    status.textContent = '연결된 구글 시트가 없어요';
+    document.getElementById('tableWrap').innerHTML =
+      `<div class="empty-state">config.js에 Apps Script 웹앱 URL을 넣으면<br>학생들의 결과가 여기에 모여요. (README.md 참고)</div>`;
+    return;
+  }
+  try{
+    const res = await fetch(API_URL);
+    if(!res.ok) throw new Error('bad response');
+    const data = await res.json();
+    render(data.entries || []);
+    status.textContent = '마지막 업데이트: ' + new Date().toLocaleTimeString('ko-KR');
+  }catch(e){
+    status.textContent = '결과를 불러올 수 없어요 (Apps Script URL을 확인해주세요)';
+  }
+}
+
+function render(entries){
+  // 같은 학생·같은 활동은 가장 높은 별점만 표시
+  const students = {};
+  for(const e of entries){
+    if(!students[e.name]) students[e.name] = {};
+    const prev = students[e.name][e.activityId];
+    if(!prev || Number(e.stars) > Number(prev.stars)) students[e.name][e.activityId] = e;
+  }
+  const names = Object.keys(students).sort((a,b)=>a.localeCompare(b,'ko'));
+
+  document.getElementById('summary').innerHTML = `
+    <div class="tile"><div class="num">${names.length}</div><div class="label">참여 학생 수</div></div>
+    <div class="tile"><div class="num">${entries.length}</div><div class="label">누적 완료 활동 수</div></div>
+  `;
+
+  const tableWrap = document.getElementById('tableWrap');
+  if(names.length === 0){
+    tableWrap.innerHTML = `<div class="empty-state">아직 기록된 결과가 없어요. 학생이 놀이를 완료하면 여기에 자동으로 나타나요.</div>`;
+    return;
+  }
+
+  tableWrap.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th class="name-col">학생</th>
+          ${ACTIVITIES.map(a=>`<th>${a.icon}<br>${a.title}</th>`).join('')}
+          <th>완료</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${names.map(name=>{
+          const row = students[name];
+          const done = ACTIVITIES.filter(a=>row[a.id]).length;
+          return `<tr>
+            <td class="name-col">${esc(name)}</td>
+            ${ACTIVITIES.map(a=>{
+              const r = row[a.id];
+              return r
+                ? `<td class="cell-star" style="color:${a.color}">${'★'.repeat(Math.max(0, Math.min(5, Number(r.stars)||0)))}</td>`
+                : `<td class="cell-empty">—</td>`;
+            }).join('')}
+            <td>${done}/${ACTIVITIES.length}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function resetAll(){
+  if(!API_URL) return;
+  const pin = prompt('모든 학생의 기록을 삭제해요. 되돌릴 수 없어요.\n선생님 비밀번호(Apps Script의 RESET_PIN)를 입력하세요.');
+  if(!pin) return;
+  fetch(API_URL, {
+    method:'POST',
+    headers:{'content-type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({ action:'reset', pin })
+  })
+    .then(r=>r.json())
+    .then(d=>{ if(!d.ok) alert('비밀번호가 맞지 않아요.'); })
+    .catch(()=>{})
+    .then(loadResults);
+}
+
+loadResults();
+setInterval(loadResults, 5000);
+</script>
+</body>
+</html>
